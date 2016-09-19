@@ -4,6 +4,13 @@
 """
 Author: komah
 """
+
+"""
+usage:
+[train] python main.py --use_gpu --train --train_text train-of-ja-wiki.wakati.txt --model ja-wiki --vocab_file vocab.txt --n_epoch 5
+[evaluate] python main.py --use_gpu --evaluate --evaluate_text test-of-ja-wiki.wakati.txt --model ja-wiki-5epoch.model --vocab_file vocab.txt
+"""
+
 import argparse
 import sys, time
 import os.path
@@ -27,7 +34,7 @@ def argument():
     
     # For evaluation
     parser.add_argument('--evaluate', action='store_true', default=False)
-    parser.add_argument('--evaluate-text', default='')
+    parser.add_argument('--evaluate_text', default='')
 
     # For generation
     parser.add_argument('--generate', action='store_true', default=False)
@@ -172,13 +179,13 @@ def train(args):
 
 def evaluate(args):
 
-    if not file_exists(arg.evaluate_text):
+    if not file_exists(args.evaluate_text):
         return
 
-    if not file_exists(arg.vocab_file):
+    if not file_exists(args.vocab_file):
         return
 
-    if not file_exists(arg.model_file):
+    if not file_exists(args.model):
         return
 
     """
@@ -200,7 +207,7 @@ def evaluate(args):
     model = L.Classifier(rnn)
     model.compute_accuracy = False
 
-    serializers.load_npz(args.model_file, model)
+    serializers.load_npz(args.model, model)
 
     """
     Setup GPU
@@ -216,9 +223,10 @@ def evaluate(args):
     Setup Data
     """
     sequences = []
+    raw_sentences = []
     for line in open(args.evaluate_text):
         line = line.strip()
-
+        raw_sentences.append(line)
         # sequence of integers in 1 sentence
         sequence = []
 
@@ -238,17 +246,20 @@ def evaluate(args):
     Evaluate
     """
     print('Evaluating started.')
-    for sequence in sequences:
-        x_list = Variable(xp.array(sequence, dtype=xp.int32))
+    for i, sequence in enumerate(sequences):
+        x_list = Variable(xp.array([[sequence[j]] for j in range(len(sequence))  ], dtype=xp.int32))
         loss = 0
+        count = 0
         rnn.reset_state()
         for cur_word, next_word in zip(x_list, x_list[1:]):
             loss += model(cur_word, next_word)
+            count += 1
         
-        print('sentence: {}'.format(
-            ' '.join([vocab.i2s(idx) for idx in sequence])
+        print('loss:{}\tsentence: {}'.format(
+            loss.data/count,
+            raw_sentences[i]
         ))
-        print('loss: {}'.format(loss))
+
 
 def main():
     args = argument()
