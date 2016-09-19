@@ -18,11 +18,11 @@ import chainer.links as L
 class RNN(Chain):
     def __init__(self, vocab_size, embed_size, hidden_size, train=True):
         """
-        Most simplest RNN which has 1 input layer, 2 hidden layers and 1 output layer.
+        Simplest RNN which has 1 input layer, 2 hidden layers and 1 output layer.
         These 2 hidden layers are also kwown as word vector and context vector.
 
         Args: 
-        vocab_size - The number of vocaburary
+        vocab_size - The number of vocabulary
         embed_size - The size of embeddings of the input
         hidden_size - The size of the hidden layer
         train - The flag of training mode
@@ -46,7 +46,7 @@ class RNN(Chain):
         """
         Not forward function but __call__ function is better way in later than Chainer1.5.
         """
-        x = self.l0(cur_word)
-        h = self.l1(x)
-        y = self.l2(h)
+        h0 = self.l0(cur_word)
+        h1 = self.l1( F.dropout(h0, train=self.train) )
+        y = self.l2(h1)
         return y

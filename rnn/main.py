@@ -24,9 +24,6 @@ def argument():
     parser.add_argument('--train_text', default='')
     parser.add_argument('--n_epoch', default=10, type=int)
     parser.add_argument('--n_batch', default=256, type=int)
-    # parser.add_argument('--unchain', action='store_true', default=False)
-    # parser.add_argument('--dropout', action='store_true', default=False)
-    # parser.add_argument('--gradgrip', action='store_true', default=False)
     
     # For evaluation
     parser.add_argument('--evaluate', action='store_true', default=False)
@@ -159,11 +156,11 @@ def train(args):
                     loss.unchain_backward()
                     optimizer.update()
             if jump%10 == 0:
-                print('  ** epoch={}, batch idx={}, loss={}, progress={}'.format(
+                print('  ** epoch={}\tbatch idx={}\tloss={}\tprogress={}%'.format(
                     epoch,
                     jump,
                     xp.mean(loss.data),
-                    str(float(epoch * (n_data - n_batch) / n_batch + jump ) / (n_epoch * (n_data - n_batch) / n_batch))[:5]
+                    str( float( (epoch-1)*n_data + jump ) * 100.0 / (n_data*n_epoch) )[:5]
                 ))
         if epoch % 1 == 0:
             outfile = args.model + '-{}epoch.model'.format(epoch)
@@ -171,12 +168,94 @@ def train(args):
             outfile = args.model + '-{}epoch.optimizer'.format(epoch)
             serializers.save_npz(outfile, optimizer)
 
+    print('Training successed.')
+
+def evaluate(args):
+
+    if not file_exists(arg.evaluate_text):
+        return
+
+    if not file_exists(arg.vocab_file):
+        return
+
+    if not file_exists(arg.model_file):
+        return
+
+    """
+    Setup vocabulary
+    """
+    vocab = Vocabulary.load_from_file(args.vocab_file)
+    print('Vocaburlary loaded.')
+    print('  * vocab size: {}'.format(vocab.size))
+
+    """
+    Setup model
+    """
+    n_vocab = vocab.size
+    n_embed = args.n_embed
+    n_hidden = args.n_hidden
+
+    rnn = RNN(n_vocab, n_embed, n_hidden, train=False)
+    rnn.reset_state()
+    model = L.Classifier(rnn)
+    model.compute_accuracy = False
+
+    serializers.load_npz(args.model_file, model)
+
+    """
+    Setup GPU
+    """
+    if args.use_gpu:
+        xp = cuda.cupy
+        cuda.get_device(0).use()
+        model.to_gpu()
+    else:
+        xp = np
+
+    """
+    Setup Data
+    """
+    sequences = []
+    for line in open(args.evaluate_text):
+        line = line.strip()
+
+        # sequence of integers in 1 sentence
+        sequence = []
+
+        # make sequence
+        sequence.append( vocab.stoi('<s>') )
+        [sequence.append( vocab.stoi(word) ) for word in line.split(' ')]
+        sequence.append( vocab.stoi('</s>') )
+
+        # append to sequences list
+        sequences.append(sequence)
+
+    n_data = len(sequences)
+    print('Data loaded.')
+    print('  * number of training data: {}'.format(n_data))
+
+    """
+    Evaluate
+    """
+    print('Evaluating started.')
+    for sequence in sequences:
+        x_list = Variable(xp.array(sequence, dtype=xp.int32))
+        loss = 0
+        rnn.reset_state()
+        for cur_word, next_word in zip(x_list, x_list[1:]):
+            loss += model(cur_word, next_word)
+        
+        print('sentence: {}'.format(
+            ' '.join([vocab.i2s(idx) for idx in sequence])
+        ))
+        print('loss: {}'.format(loss))
+
 def main():
     args = argument()
     if args.train:
         train(args)
-    #else:
-        #eval(args)
+    elif args.evaluate:
+        evaluate(args)
 
 if __name__ == '__main__':
     main()
