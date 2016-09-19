@@ -8,13 +8,14 @@ Author: 小間 洋和
 class Vocabulary:
     def __init__(self, fname):
         self.fname = fname
+        self.size = 0
         self.s2i = {}
         self.i2s = []
         if not fname is None:
             self.load_vocab()
 
     def stoi(self, word):
-        if letter in self.s2i:
+        if word in self.s2i:
             return self.s2i[word]
         return self.s2i['<unk>']
 
@@ -31,11 +32,12 @@ class Vocabulary:
                 self.s2i[word] = id
 
     def load_vocab(self):
-        self.append_words(['<unk>', '<s>', '</s>'])
+        self.append_words(['<unk>', '<sp>', '<s>', '</s>'])
         with open(self.fname) as f:
             for line in f:
                 words = line.strip().split(' ')
                 self.append_words(words)
+        self.size = len(self.i2s)
 
     def save_vocab(self, filename):
         with open(filename, 'w') as f:
@@ -49,4 +51,5 @@ class Vocabulary:
             for word in f:
                 word = word.strip()
                 vocab.append_words([word])
+        vocab.size = len(vocab.i2s)
         return vocab

@@ -10,7 +10,7 @@ import sys, time
 
 import numpy as np
 import chainer
-from chainer import cuda, gradient_check, optimizers, serializers, units
+from chainer import cuda, gradient_check, optimizers, serializers, utils
 from chainer import Function, Variable, Link, Chain, ChainList
 import chainer.functions as F
 import chainer.links as L
@@ -42,11 +42,11 @@ class RNN(Chain):
         """
         self.l1.reset_state()
 
-    def __call__(self, current_word):
+    def __call__(self, cur_word):
         """
         Not forward function but __call__ function is better way in later than Chainer1.5.
         """
-        x = self.l1(current_word)
-        h = self.l2(x)
-        y = self.l3(h)
+        x = self.l0(cur_word)
+        h = self.l1(x)
+        y = self.l2(h)
         return y
