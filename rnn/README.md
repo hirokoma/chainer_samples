@@ -8,6 +8,7 @@ python main.py --use_gpu --train --train_text train-of-ja-wiki.wakati.txt --mode
 python main.py --use_gpu --evaluate --evaluate_text test-of-ja-wiki.wakati.txt --model ja-wiki-5epoch.model --vocab_file vocab.txt
 ~~~
 
+~~~
 loss:4.19947195053  sentence: iPhone6 の おすすめ カラー は ローズ ゴールド です 。
 loss:4.42352819443  sentence: iPhone6 は カラー の おすすめ が ローズ ゴールド の カラー です 。
 loss:4.70171880722  sentence: iPhone6 の 人気 は おすすめ カラー で ローズ ゴールド です 。
@@ -34,3 +35,4 @@ loss:5.87420463562  sentence: Xperia は 人気 色 の 性能 が 高い から
 loss:5.63660669327  sentence: Xperia は 価格 の 性能 が 高い から おすすめ です 。
 loss:5.67155313492  sentence: Xperia は アプリ の 種類 の 性能 が 高い から おすすめ です 。
 loss:5.93311738968  sentence: Xperia は 若者 人気 の 性能 が 高い から おすすめ です 。
+~~~
